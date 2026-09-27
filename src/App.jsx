@@ -13,6 +13,15 @@ const TICK_MS = 140
 const isSameCell = (firstCell, secondCell) =>
   firstCell.x === secondCell.x && firstCell.y === secondCell.y
 
+const wrapCoordinate = (coordinate) => (coordinate + BOARD_SIZE) % BOARD_SIZE
+
+const getNextHead = (head, nextDirection) => ({
+  x: wrapCoordinate(head.x + nextDirection.x),
+  y: wrapCoordinate(head.y + nextDirection.y),
+})
+
+const collidesWithSnake = (snake, cell) => snake.some((segment) => isSameCell(segment, cell))
+
 const randomFoodPosition = (snake) => {
   const freeCells = []
 
@@ -112,23 +121,12 @@ function App() {
     const intervalId = window.setInterval(() => {
       setSnake((currentSnake) => {
         const nextDirection = queuedDirection
-        const currentHead = currentSnake[0]
-        const nextHead = {
-          x: currentHead.x + nextDirection.x,
-          y: currentHead.y + nextDirection.y,
-        }
-
-        const hitWall =
-          nextHead.x < 0 ||
-          nextHead.x >= BOARD_SIZE ||
-          nextHead.y < 0 ||
-          nextHead.y >= BOARD_SIZE
+        const nextHead = getNextHead(currentSnake[0], nextDirection)
 
         const willEatFood = isSameCell(nextHead, food)
         const tailSafeSnake = willEatFood ? currentSnake : currentSnake.slice(0, -1)
-        const hitSelf = tailSafeSnake.some((segment) => isSameCell(segment, nextHead))
 
-        if (hitWall || hitSelf) {
+        if (collidesWithSnake(tailSafeSnake, nextHead)) {
           setIsRunning(false)
           setIsGameOver(true)
           return currentSnake
@@ -221,6 +219,7 @@ function App() {
           <p>
             Pulsa <code>espacio</code> para pausar o reanudar.
           </p>
+          <p>Al cruzar una pared apareces por el lado contrario. Pierdes si chocas contigo.</p>
         </div>
       </section>
     </main>
